@@ -13,9 +13,10 @@ from PyTorchModel import visualizeImages
 import external.resnet as resnet
 
 preprocess = transforms.Compose([
-    transforms.Resize(256),
-    transforms.CenterCrop(224),
-    transforms.ToTensor()
+    # transforms.Resize(256),
+    # transforms.CenterCrop(224),
+    transforms.ToTensor(),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
 cifar10 = datasets.CIFAR10("./data/CIFAR10/", transform=preprocess, download=False)
@@ -40,7 +41,8 @@ for k, v in checkpoint['state_dict'].items():
   new_state_dict[name] = v
   
 # Load in the state_dict of the pre-trained model
-resnet44model = resnet.resnet44().load_state_dict(new_state_dict)
+resnet44model = resnet.resnet44()
+resnet44model.load_state_dict(new_state_dict)
 
 # Our abstract model
 loaderparams = {
@@ -51,5 +53,4 @@ loaderparams = {
 model = PyTorchNNModel(resnet44model)
 data  = PyTorchClassifierDataHandler([cifar10, cifar10_classes], loaderparams) 
 x, ytrue = data.getNextData(1)
-visualizeImages(x)
-print(data.datasetLength())
+model.forward(x)

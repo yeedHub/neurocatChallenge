@@ -22,8 +22,8 @@ class PyTorchClassifierDataHandler(DataHandlerInterface):
     
     for _ in range(count):
       datapoint = self.__dataiter.next()
-      samples  += datapoint[0]
-      labels   += datapoint[1]
+      samples.append(datapoint[0])
+      labels.append(datapoint[1])
       
     return (samples, labels)
   
@@ -39,7 +39,7 @@ class PyTorchNNModel(NNModelInterface):
     for sample in samples:
       output = self.__model(sample)
       # output = torch.nn.functional.softmax(output, dim=0)
-      # print(np.argmax(output.detach().numpu(), axis=1))
+      # print(np.argmax(output.detach().numpy(), axis=1))
       print(output)
   
   def onePassAnalysis(self, samples):
