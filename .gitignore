@@ -10,7 +10,7 @@ __pycache__/
 .DS_Store
 
 #data folder
-./data
+/data/
 
 #VS Code
 .vscode
