@@ -49,9 +49,10 @@ class PyTorchNNMulticlassifier(NNModelInterface):
 
 class PyTorchNNClassifierStatistics(ModelStatisticsInterface):  
   def __init__(self, class_count):
-    self.class_count = class_count
+    self.class_count = class_count                   # number of different classes
     
-    self.total_samples = 0
+    self.total_samples       = 0                     # number of all samples
+    self.total_class_samples = np.zeros(class_count) # number of each class in data 
     
     self.cnf_matrix = np.zeros((class_count, class_count))
     self.TrueP      = np.zeros(class_count)
@@ -62,8 +63,11 @@ class PyTorchNNClassifierStatistics(ModelStatisticsInterface):
   def onePassAnalysis(self, model, X, Ytrue):
     for i, x in enumerate(X):
       output = model.forward(x)
-      self.cnf_matrix    += confusion_matrix(Ytrue[i], output, labels=range(self.class_count))
-      self.total_samples += len(output)
+      
+      self.cnf_matrix += confusion_matrix(Ytrue[i], output, labels=range(self.class_count))
+      
+      self.total_samples                 += len(output)
+      self.total_class_samples[Ytrue[i]] += 1
       
     self.TrueP  = np.diag(self.cnf_matrix)    
     self.FalseP = self.cnf_matrix.sum(axis=0) - self.TrueP
@@ -78,3 +82,18 @@ class PyTorchNNClassifierStatistics(ModelStatisticsInterface):
   
   def cnf_matrix(self):
     return {"matrix": self.cnf_matrix, "TP": self.TrueP, "FP": self.FalseP, "TN": self.TrueN, "FN": self.FalseN}
+  
+  def precision(self):
+    return self.TrueP / (self.TrueP + self.FalseP)
+  
+  def recall(self):
+    return self.TrueP / (self.TrueP + self.FalseN)
+  
+  def F1(self):
+    return 2 * ( self.precision() * self.recall() ) / ( self.precision() + self.recall() )
+  
+  def MacroF1(self):
+    return np.sum(self.F1()) / self.class_count
+  
+  def WeightedF1(self):
+    return np.sum(self.F1() * self.total_class_samples)
