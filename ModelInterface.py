@@ -38,15 +38,20 @@ class NNModelInterface(metaclass=ABCMeta):
     pass
   
   @abstractmethod
-  def forward(self, samples):
+  def forward(self, x):
     """
-    Forward step of the neural network model. samples can contain
-    a single data point or multiple data points.
+    Forward step of the neural network model. x is supposed to be a
+    single data point.
     """
     pass
   
+class ModelStatisticsInterface(metaclass=ABCMeta):
   @abstractmethod
-  def onePassAnalysis(self, samples):
+  def __init__(self):
+    pass
+  
+  @abstractmethod
+  def onePassAnalysis(self, model, X):
     """
     One pass analyses group analyses that can be calculated with one pass over
     the given data points. This can for example be the calculation of accuracy.
@@ -54,7 +59,7 @@ class NNModelInterface(metaclass=ABCMeta):
     pass
   
   @abstractmethod
-  def multPassAnalysis(self, samples):
+  def multPassAnalysis(self, model, X):
     """
     Multi-pass analyses group analyses that need more than one pass over the dataset
     to be calculated. For example in an image classification task one such analysis

@@ -1,4 +1,5 @@
 from collections import OrderedDict
+from tqdm import tqdm
 
 import torch
 import torchvision.transforms as transforms
@@ -6,20 +7,16 @@ import torchvision.models as models
 import torchvision.datasets as datasets
 import torchvision.utils as utils
 
-from PyTorchModel import PyTorchNNModel 
-from PyTorchModel import PyTorchClassifierDataHandler
-from PyTorchModel import visualizeImages
+from PyTorchModel import PyTorchNNMulticlassifier, PyTorchNNClassifierStatistics, PyTorchClassifierDataHandler
 
 import external.resnet as resnet
 
 preprocess = transforms.Compose([
-    # transforms.Resize(256),
-    # transforms.CenterCrop(224),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
 ])
 
-cifar10 = datasets.CIFAR10("./data/CIFAR10/", transform=preprocess, download=False)
+cifar10 = datasets.CIFAR10("./data/CIFAR10/", train=False, transform=preprocess, download=False)
 cifar10_classes = ["airplane",
                    "automobile",
                    "bird",
@@ -46,11 +43,16 @@ resnet44model.load_state_dict(new_state_dict)
 
 # Our abstract model
 loaderparams = {
-  "batch_size": 3,
+  "batch_size": 500,
   "shuffle": True,
   "num_workers": 4
 }
-model = PyTorchNNModel(resnet44model)
+model = PyTorchNNMulticlassifier(resnet44model)
 data  = PyTorchClassifierDataHandler([cifar10, cifar10_classes], loaderparams) 
-x, ytrue = data.getNextData(1)
-model.forward(x)
+stats = PyTorchNNClassifierStatistics(len(cifar10_classes))
+
+for _ in tqdm(range(20)):
+  X, Ytrue = data.getNextData(1)
+  stats.onePassAnalysis(model, X, Ytrue)
+  
+print(stats.accuracy())
