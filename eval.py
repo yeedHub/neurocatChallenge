@@ -1,11 +1,9 @@
 from collections import OrderedDict
-from tqdm import tqdm
+from tqdm        import tqdm
 
 import torch
 import torchvision.transforms as transforms
-import torchvision.models as models
-import torchvision.datasets as datasets
-import torchvision.utils as utils
+import torchvision.datasets   as datasets
 
 from PyTorchModel import PyTorchNNMulticlassifier, PyTorchNNClassifierStatistics, PyTorchClassifierDataHandler
 

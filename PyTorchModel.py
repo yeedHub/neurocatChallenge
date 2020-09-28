@@ -1,8 +1,10 @@
-from ModelInterface import ModelStatisticsInterface, NNModelInterface, DataHandlerInterface
+from Interface.statistics import ModelStatisticsInterface
+from Interface.nn         import NNModelInterface
+from Interface.data       import DataHandlerInterface
 
 import torch
 import torchvision.utils as utils
-import numpy as np
+import numpy             as np
 import matplotlib.pyplot as plt
 
 from sklearn.metrics import confusion_matrix
