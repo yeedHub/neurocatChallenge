@@ -43,7 +43,7 @@ resnet44model.load_state_dict(new_state_dict)
 
 # Our abstract model
 loaderparams = {
-  "batch_size": 500,
+  "batch_size": 5,
   "shuffle": True,
   "num_workers": 4
 }
@@ -56,3 +56,4 @@ for _ in tqdm(range(20)):
   stats.onePassAnalysis(model, X, Ytrue)
   
 print(stats.accuracy())
+print(stats.MacroF1(), stats.WeightedF1())
