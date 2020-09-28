@@ -11,11 +11,8 @@ class PyTorchClassifierDataHandler(DataHandlerInterface):
   def __init__(self, dataset, params):
     self.__dataset    = dataset[0] # contains x and y_true
     self.__charlabels = dataset[1] # human readable labels
-    self.configureDataLoader(params)
-    self.__dataiter = iter(self.__loader)
-    
-  def configureDataLoader(self, params):
-    self.__loader = torch.utils.data.DataLoader(self.__dataset, **params)
+    self.__loader     = torch.utils.data.DataLoader(self.__dataset, **params)
+    self.__dataiter   = iter(self.__loader)
   
   # TODO: does not handle out of data request  
   def getNextData(self, count):
@@ -54,21 +51,20 @@ class PyTorchNNClassifierStatistics(ModelStatisticsInterface):
   def __init__(self, class_count):
     self.class_count = class_count
     
-    self.cnf_matrix = np.zeros((class_count, class_count))
+    self.total_samples = 0
     
+    self.cnf_matrix = np.zeros((class_count, class_count))
     self.TrueP      = np.zeros(class_count)
     self.TrueN      = np.zeros(class_count)
     self.FalseP     = np.zeros(class_count)
     self.FalseN     = np.zeros(class_count)
-    
-    self.total_samples = 0
   
   def onePassAnalysis(self, model, X, Ytrue):
     for i, x in enumerate(X):
       output = model.forward(x)
       self.cnf_matrix    += confusion_matrix(Ytrue[i], output, labels=range(self.class_count))
       self.total_samples += len(output)
-
+      
     self.TrueP  = np.diag(self.cnf_matrix)    
     self.FalseP = self.cnf_matrix.sum(axis=0) - self.TrueP
     self.FalseN = self.cnf_matrix.sum(axis=1) - self.TrueP
@@ -78,5 +74,7 @@ class PyTorchNNClassifierStatistics(ModelStatisticsInterface):
     pass
   
   def accuracy(self):
-    print(np.sum(self.TrueP + self.TrueN + self.FalseP + self.FalseN), self.total_samples)
-    return (np.sum(self.TrueP) / self.total_samples, np.sum(self.TrueP + self.TrueN) / np.sum(self.TrueP + self.TrueN + self.FalseP + self.FalseN))
+    return np.sum(self.TrueP + self.TrueN) / np.sum(self.TrueP + self.TrueN + self.FalseP + self.FalseN)
+  
+  def cnf_matrix(self):
+    return {"matrix": self.cnf_matrix, "TP": self.TrueP, "FP": self.FalseP, "TN": self.TrueN, "FN": self.FalseN}

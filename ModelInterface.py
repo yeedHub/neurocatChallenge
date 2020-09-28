@@ -41,11 +41,14 @@ class NNModelInterface(metaclass=ABCMeta):
   def forward(self, x):
     """
     Forward step of the neural network model. x is supposed to be a
-    single data point.
+    single data point (or batch).
     """
     pass
   
 class ModelStatisticsInterface(metaclass=ABCMeta):
+  """
+  The ModelStatisticsInterface calculates different metrics for a given model.
+  """
   @abstractmethod
   def __init__(self):
     pass
