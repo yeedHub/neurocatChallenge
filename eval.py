@@ -49,7 +49,7 @@ optimizer     = torch.optim.SGD(resnet44model.parameters(), lr=0.1) # the learni
 
 # Our abstract model
 loaderparams = {
-  "batch_size": 10,
+  "batch_size": 5,
   "shuffle": True,
   "num_workers": 4
 }
@@ -62,8 +62,10 @@ stats2 = PyTorchNNClassifierAnalyzer(len(cifar10_classes))
 for _ in tqdm(range(20)):
   X, Ytrue = data.getNextData(1)
   stats1.functionality_analysis(model, X, Ytrue)
-  stats2.robustness_analysis(model, X, Ytrue, cifar10_classes)
-  
-print("Accuracy: "   + str(stats1.accuracy)   + " -- " + str(stats2.accuracy))
-print("MacroF1: "    + str(stats1.MacroF1)    + " -- " + str(stats2.MacroF1))
-print("WeightedF1: " + str(stats1.WeightedF1) + " -- " + str(stats2.WeightedF1))
+  stats2.robustness_analysis(model, X, Ytrue)
+import numpy as np
+print(str((np.sum(stats1.TrueP), np.sum(stats1.FalseP), np.sum(stats1.TrueN), np.sum(stats1.FalseN))))
+print(str((np.sum(stats2.TrueP), np.sum(stats2.FalseP), np.sum(stats2.TrueN), np.sum(stats2.FalseN))))
+print("Accuracy:          " + str(round(stats1.accuracy, 3))     + " -- " + str(round(stats2.accuracy, 3)))
+print("Balanced Accuracy: " + str(round(stats1.bal_accuracy, 3)) + " -- " + str(round(stats2.bal_accuracy, 3)))
+print("WeightedF1:        " + str(round(stats1.WeightedF1, 3))   + " -- " + str(round(stats2.WeightedF1, 3)))

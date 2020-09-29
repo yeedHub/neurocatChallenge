@@ -114,12 +114,6 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
     for i, x in enumerate(X):
       interpreted_output = model.interpret_output(model.forward(x))
       
-      # print(interpreted_output[0], interpreted_output[1])
-      # print(Ytrue[i])
-      # print(self.charlabels[interpreted_output[0]])
-      # print(self.charlabels[Ytrue[i]])
-      # print("---------")
-      
       self.total_samples += len(interpreted_output[0])
       for s in Ytrue[i]:
         self.total_class_samples[s] += 1
@@ -137,47 +131,43 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
         self.cnf_matrix[ytrue[i], pred] += 1
     
   def calculate_cnf_derivations(self):
-    self.TrueP  = np.diag(self.cnf_matrix)    
+    self.TrueP  = np.diag(self.cnf_matrix)
     self.FalseP = self.cnf_matrix.sum(axis=0) - self.TrueP
     self.FalseN = self.cnf_matrix.sum(axis=1) - self.TrueP
     self.TrueN  = self.cnf_matrix.sum() - (self.TrueP + self.FalseN + self.FalseP)
     
-    self.accuracy = np.sum(self.TrueP + self.TrueN) / np.sum(self.TrueP + self.TrueN + self.FalseP + self.FalseN)
+    denominator      = np.sum(self.TrueN) + np.sum(self.FalseP)
+    self.specificity = np.sum(self.TrueN) / denominator if denominator != 0 else 1
     
-    # Setting the elements in the denominator that are 0 to 1 results in a valid division
-    # but does not change the result, since TrueP is also in the numerator
-    denominator = (self.TrueP + self.FalseP)
-    denominator[denominator == 0] = 1
-    self.precision = self.TrueP / denominator
+    denominator    = np.sum(self.TrueP) + np.sum(self.FalseP)
+    self.precision = np.sum(self.TrueP) / denominator if denominator != 0 else 1
     
-    # Setting the elements in the denominator that are 0 to 1 results in a valid division
-    # but does not change the result, since TrueP is also in the numerator
-    denominator = (self.TrueP + self.FalseN)
-    denominator[denominator == 0] = 1
-    self.recall = self.TrueP / denominator
+    denominator = np.sum(self.TrueP) + np.sum(self.FalseN)
+    self.recall = np.sum(self.TrueP) / denominator if denominator != 0 else 1
     
-    # Setting the elements in the denominator that are 0 to 1 results in a valid division
-    # but does not change the result, since self.precision() * self.recall() is definitly zero in the numerator
-    # if both are 0.
-    denominator = (self.precision + self.recall)
-    denominator[denominator == 0] = 1
-    self.F1 = 2 * ( self.precision * self.recall ) / denominator
+    denominator = self.precision + self.recall
+    self.F1     = 2 * ( self.precision * self.recall ) / denominator if denominator != 0 else 1
     
-    self.MacroF1    = np.sum(self.F1) / self.num_class
-    self.WeightedF1 = np.sum(self.F1 * self.total_class_samples) / self.total_samples
+    self.WeightedF1   = np.sum(self.F1 * self.total_class_samples) / self.total_samples
+    self.bal_accuracy = np.sum(self.recall + self.specificity) / 2.0 # balanced accuracy
+    self.accuracy     = (np.sum(self.TrueP) + np.sum(self.TrueN)) / (np.sum(self.TrueP) + np.sum(self.TrueN) + np.sum(self.FalseP) + np.sum(self.FalseN))
   
-  def robustness_analysis(self, model, X, Ytrue, bla):
-    self.charlabels = np.array(bla)
+  def robustness_analysis(self, model, X, Ytrue):
     result = []
     for i, x in enumerate(X):
+      
       gradient  = model.gradient_for(x, Ytrue[i])
-      perturbed = self.fgsm_attack(0.007, x, gradient)
-                   
-      result.append(perturbed)   
+      perturbed = self.fgsm_attack(0.07, x, gradient)
+      
+      # If the prediction of original data is wrong, don't include them
+      # (otherwise we run the risk of skewing our attack result)
+      interpreted_output = model.interpret_output(model.forward(x))
+      mask               = interpreted_output[0] != Ytrue[i]
+      perturbed[mask]    = x[mask]
+      
+      result.append(perturbed)  
       # images = utils.make_grid(torch.cat((x, perturbed), 0))
       # plot_img(images)
-      
-    # TODO: calculate the difference between non perturbed and perturbed input
     
     self.functionality_analysis(model, result, Ytrue)
     # images = utils.make_grid(torch.cat(result, 0))
