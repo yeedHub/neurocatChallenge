@@ -55,19 +55,29 @@ class PyTorchNNMulticlassifier(NNModelInterface):
     return self.__model(x)
 
   def interpret_output(self, output):
-    output = torch.nn.functional.softmax(output, dim=0)
-      
-    outargmax = np.argmax(output.detach().numpy(), axis=1)
-    return outargmax
+    output        = torch.nn.functional.softmax(output, dim=0)
+    probabilities = np.max(output.detach().numpy(), axis=0)
+    probargmax    = np.argmax(output.detach().numpy(), axis=1)
+    return (probargmax, probabilities)
   
-  def backward(self, ypred, ytrue):
+  def backward(self, output, ytrue):
     """
     Only does a single backpropagation step and computes gradients.
-    The gradients are not applied to the weights yet.
+    The gradients are not applied to the weights yet,
+    which in pytorch is done by calling the step() function
+    of the optimizer.
     """
     self.zero_grad()
-    loss = self.__loss_function(ypred, ytrue)
+    loss = self.__loss_function(output, ytrue)
     loss.backward()
+    
+  def apply_gradients(self):
+    """
+    We don't really need this function to evaluate our model, it is
+    only useful for training the model. For the sake of completeness
+    though I include it.
+    """
+    self.__optimizer.step()
   
   def gradient_for(self, x, ytrue):
     x.requires_grad = True    
@@ -85,9 +95,9 @@ class PyTorchNNMulticlassifier(NNModelInterface):
 
 class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):  
   def __init__(self, num_class):
-    self.num_class = num_class                       # number of different classes
+    self.num_class = num_class                     # number of different classes
     
-    self.total_samples       = 0                     # number of all samples
+    self.total_samples       = 0                   # number of all samples
     self.total_class_samples = np.zeros(num_class) # number of each class in data 
     
     self.cnf_matrix = np.zeros((num_class, num_class))
@@ -100,15 +110,21 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
     self.MacroF1    = 0
     self.WeightedF1 = 0
   
-  def onePassAnalysis(self, model, X, Ytrue):
+  def functionality_analysis(self, model, X, Ytrue):
     for i, x in enumerate(X):
       interpreted_output = model.interpret_output(model.forward(x))
       
-      self.total_samples += len(interpreted_output)
+      # print(interpreted_output[0], interpreted_output[1])
+      # print(Ytrue[i])
+      # print(self.charlabels[interpreted_output[0]])
+      # print(self.charlabels[Ytrue[i]])
+      # print("---------")
+      
+      self.total_samples += len(interpreted_output[0])
       for s in Ytrue[i]:
         self.total_class_samples[s] += 1
       
-      self.calculate_confusion_matrix(interpreted_output, Ytrue[i])
+      self.calculate_confusion_matrix(interpreted_output[0], Ytrue[i])
     
     self.calculate_cnf_derivations()
   
@@ -128,20 +144,20 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
     
     self.accuracy = np.sum(self.TrueP + self.TrueN) / np.sum(self.TrueP + self.TrueN + self.FalseP + self.FalseN)
     
-    # Setting those elements in the denominator that are 0 to 1 results in a valid division
-    # but does not change the result - since TrueP is also in the numerator
+    # Setting the elements in the denominator that are 0 to 1 results in a valid division
+    # but does not change the result, since TrueP is also in the numerator
     denominator = (self.TrueP + self.FalseP)
     denominator[denominator == 0] = 1
     self.precision = self.TrueP / denominator
     
-    # Setting those elements in the denominator that are 0 to 1 results in a valid division
-    # but does not change the result - since TrueP is also in the numerator
+    # Setting the elements in the denominator that are 0 to 1 results in a valid division
+    # but does not change the result, since TrueP is also in the numerator
     denominator = (self.TrueP + self.FalseN)
     denominator[denominator == 0] = 1
     self.recall = self.TrueP / denominator
     
-    # Setting those elements in the denominator that are 0 to 1 results in a valid division
-    # but does not change the result - since self.precision() * self.recall() is definitly zero in the numerator
+    # Setting the elements in the denominator that are 0 to 1 results in a valid division
+    # but does not change the result, since self.precision() * self.recall() is definitly zero in the numerator
     # if both are 0.
     denominator = (self.precision + self.recall)
     denominator[denominator == 0] = 1
@@ -150,21 +166,31 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
     self.MacroF1    = np.sum(self.F1) / self.num_class
     self.WeightedF1 = np.sum(self.F1 * self.total_class_samples) / self.total_samples
   
-  def multPassAnalysis(self, model, X, Ytrue):
+  def robustness_analysis(self, model, X, Ytrue, bla):
+    self.charlabels = np.array(bla)
+    result = []
     for i, x in enumerate(X):
-      gradient = model.gradient_for(x, Ytrue[i])
-      perturbed = self.fgsm_attack(0.3, x, gradient)
-              
-              
-      # plt.imshow(utils.make_grid(perturbed.detach()))
-      print(x.size(), perturbed.size())
-      images = utils.make_grid(torch.cat((x, perturbed), 0))
-      npimg = images.detach().numpy()
-      plt.imshow(np.transpose(npimg, (1, 2, 0)))
-      plt.show()
+      gradient  = model.gradient_for(x, Ytrue[i])
+      perturbed = self.fgsm_attack(0.007, x, gradient)
+                   
+      result.append(perturbed)   
+      # images = utils.make_grid(torch.cat((x, perturbed), 0))
+      # plot_img(images)
+      
+    # TODO: calculate the difference between non perturbed and perturbed input
+    
+    self.functionality_analysis(model, result, Ytrue)
+    # images = utils.make_grid(torch.cat(result, 0))
+    # plot_img(images)
     
   def fgsm_attack(self, epsilon, x, grad):
       perturbed = x + epsilon*grad.sign()
       perturbed = torch.clamp(perturbed, np.min(x.detach().numpy()), np.max(x.detach().numpy()))
       
       return perturbed
+  
+def plot_img(img):
+  npimg = img.detach().numpy()
+  plt.imshow(np.transpose(npimg, (1, 2, 0)))
+  plt.show()
+  

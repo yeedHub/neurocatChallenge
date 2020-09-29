@@ -59,11 +59,11 @@ data  = PyTorchClassifierDataHandler([cifar10, cifar10_classes], loaderparams)
 stats1 = PyTorchNNClassifierAnalyzer(len(cifar10_classes))
 stats2 = PyTorchNNClassifierAnalyzer(len(cifar10_classes))
 
-for _ in tqdm(range(1)):
+for _ in tqdm(range(20)):
   X, Ytrue = data.getNextData(1)
-  stats1.onePassAnalysis(model, X, Ytrue)
-  stats2.multPassAnalysis(model, X, Ytrue)
+  stats1.functionality_analysis(model, X, Ytrue)
+  stats2.robustness_analysis(model, X, Ytrue, cifar10_classes)
   
-print(stats1.accuracy, stats2.accuracy)
-print(stats1.MacroF1, stats2.MacroF1)
-print(stats1.WeightedF1, stats2.WeightedF1)
+print("Accuracy: "   + str(stats1.accuracy)   + " -- " + str(stats2.accuracy))
+print("MacroF1: "    + str(stats1.MacroF1)    + " -- " + str(stats2.MacroF1))
+print("WeightedF1: " + str(stats1.WeightedF1) + " -- " + str(stats2.WeightedF1))
