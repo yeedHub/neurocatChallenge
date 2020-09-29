@@ -42,21 +42,46 @@ class PyTorchClassifierDataHandler(DataHandlerInterface):
     return self.__dataset.__len__()
 
 class PyTorchNNMulticlassifier(NNModelInterface):
-  def __init__(self, model):
-    self.__model = model
+  def __init__(self, model, optimizer, loss_function):
+    self.__model         = model
+    self.__optimizer     = optimizer
+    self.__loss_function = loss_function
   
   def forward(self, x):
     """
     x has to be 4 dimensional: batch X RGB X H x W 
     """
     self.__model.eval()
-    
-    output = self.__model(x)
+    return self.__model(x)
+
+  def interpret_output(self, output):
     output = torch.nn.functional.softmax(output, dim=0)
       
     outargmax = np.argmax(output.detach().numpy(), axis=1)
-      
     return outargmax
+  
+  def backward(self, ypred, ytrue):
+    """
+    Only does a single backpropagation step and computes gradients.
+    The gradients are not applied to the weights yet.
+    """
+    self.zero_grad()
+    loss = self.__loss_function(ypred, ytrue)
+    loss.backward()
+  
+  def gradient_for(self, x, ytrue):
+    x.requires_grad = True    
+    ytrue           = torch.from_numpy(ytrue)
+    
+    output = self.forward(x)
+      
+    self.zero_grad()
+    self.backward(output, ytrue)
+    
+    return x.grad.data
+  
+  def zero_grad(self):
+    self.__model.zero_grad()
 
 class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):  
   def __init__(self, num_class):
@@ -71,17 +96,19 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
     self.FalseP     = np.zeros(num_class)
     self.FalseN     = np.zeros(num_class)
     
-    self.accuracy = 0
+    self.accuracy   = 0
+    self.MacroF1    = 0
+    self.WeightedF1 = 0
   
   def onePassAnalysis(self, model, X, Ytrue):
     for i, x in enumerate(X):
-      output = model.forward(x)
+      interpreted_output = model.interpret_output(model.forward(x))
       
-      self.total_samples += len(output)
+      self.total_samples += len(interpreted_output)
       for s in Ytrue[i]:
         self.total_class_samples[s] += 1
       
-      self.calculate_confusion_matrix(output, Ytrue[i])
+      self.calculate_confusion_matrix(interpreted_output, Ytrue[i])
     
     self.calculate_cnf_derivations()
   
@@ -123,19 +150,21 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
     self.MacroF1    = np.sum(self.F1) / self.num_class
     self.WeightedF1 = np.sum(self.F1 * self.total_class_samples) / self.total_samples
   
-  # TODO: clean this up somehow?? This function definitly needs testing.
   def multPassAnalysis(self, model, X, Ytrue):
-    percentage = range(0, 11)[randint(0, 10)] / 100.0
     for i, x in enumerate(X):
-      for j in range(x.size()[0]):
-        sample_numpy           = x[j].numpy()
-        sample_size            = x[j].size()
-        num_features_to_change = np.prod(sample_size) * percentage
-        
-        # Create num_features_to_change indeces that fit the sample.size() (random in all dimensions)
-        idx = [tuple(randint(0, sample_size[k]-1) for k in range(0, len(sample_size))) for _ in  range(0, int(num_features_to_change))]
-        
-        for l in range(0, len(idx)):
-          X[i][j][idx[l]] = randint(int(np.min(sample_numpy)), int(np.max(sample_numpy)) * 100) / 100.0
-
-      self.onePassAnalysis(model, X, Ytrue)
+      gradient = model.gradient_for(x, Ytrue[i])
+      perturbed = self.fgsm_attack(0.3, x, gradient)
+              
+              
+      # plt.imshow(utils.make_grid(perturbed.detach()))
+      print(x.size(), perturbed.size())
+      images = utils.make_grid(torch.cat((x, perturbed), 0))
+      npimg = images.detach().numpy()
+      plt.imshow(np.transpose(npimg, (1, 2, 0)))
+      plt.show()
+    
+  def fgsm_attack(self, epsilon, x, grad):
+      perturbed = x + epsilon*grad.sign()
+      perturbed = torch.clamp(perturbed, np.min(x.detach().numpy()), np.max(x.detach().numpy()))
+      
+      return perturbed
