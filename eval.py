@@ -11,7 +11,7 @@ import external.resnet as resnet
 
 preprocess = transforms.Compose([
     transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]),
+    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # taken from the resnet code
 ])
 
 cifar10 = datasets.CIFAR10("./data/CIFAR10/", train=False, transform=preprocess, download=False)
@@ -39,26 +39,31 @@ for k, v in checkpoint['state_dict'].items():
 resnet44model = resnet.resnet44()
 resnet44model.load_state_dict(new_state_dict)
 
+# In PyTorch the model, optimizer (e.g. Stocahstic Gradient Descent) 
+# and loss (e.g. CrossEntropyLoss) are separate entities. 
+# Also the model checkpoint has no information about the optimizer or loss function.
+# This means that we have to look into the training code to see
+# which optimizer and loss was used and instantiate them manually.
+loss_function = torch.nn.CrossEntropyLoss()
+optimizer     = torch.optim.SGD(resnet44model.parameters(), lr=0.1) # the learning rate used in the codebase was 0.1
+
 # Our abstract model
 loaderparams = {
   "batch_size": 10,
   "shuffle": True,
   "num_workers": 4
 }
-model = PyTorchNNMulticlassifier(resnet44model)
+model = PyTorchNNMulticlassifier(resnet44model, optimizer, loss_function)
 data  = PyTorchClassifierDataHandler([cifar10, cifar10_classes], loaderparams) 
 
 stats1 = PyTorchNNClassifierAnalyzer(len(cifar10_classes))
 stats2 = PyTorchNNClassifierAnalyzer(len(cifar10_classes))
 
-for _ in tqdm(range(20)):
+for _ in tqdm(range(1)):
   X, Ytrue = data.getNextData(1)
   stats1.onePassAnalysis(model, X, Ytrue)
-  # stats2.multPassAnalysis(model, X, Ytrue)
+  stats2.multPassAnalysis(model, X, Ytrue)
   
-# print(stats1.accuracy(), stats2.accuracy())
-# print(stats1.MacroF1(), stats2.MacroF1())
-# print(stats1.WeightedF1(), stats2.WeightedF1())
-print(stats1.accuracy)
-print(stats1.MacroF1)
-print(stats1.WeightedF1)
+print(stats1.accuracy, stats2.accuracy)
+print(stats1.MacroF1, stats2.MacroF1)
+print(stats1.WeightedF1, stats2.WeightedF1)
