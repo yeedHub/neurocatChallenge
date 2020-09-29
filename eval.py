@@ -5,7 +5,7 @@ import torch
 import torchvision.transforms as transforms
 import torchvision.datasets   as datasets
 
-from PyTorchModel import PyTorchNNMulticlassifier, PyTorchNNClassifierStatistics, PyTorchClassifierDataHandler
+from PyTorchModel import PyTorchNNMulticlassifier, PyTorchNNClassifierAnalyzer, PyTorchClassifierDataHandler
 
 import external.resnet as resnet
 
@@ -41,17 +41,24 @@ resnet44model.load_state_dict(new_state_dict)
 
 # Our abstract model
 loaderparams = {
-  "batch_size": 5,
+  "batch_size": 10,
   "shuffle": True,
   "num_workers": 4
 }
 model = PyTorchNNMulticlassifier(resnet44model)
 data  = PyTorchClassifierDataHandler([cifar10, cifar10_classes], loaderparams) 
-stats = PyTorchNNClassifierStatistics(len(cifar10_classes))
+
+stats1 = PyTorchNNClassifierAnalyzer(len(cifar10_classes))
+stats2 = PyTorchNNClassifierAnalyzer(len(cifar10_classes))
 
 for _ in tqdm(range(20)):
   X, Ytrue = data.getNextData(1)
-  stats.onePassAnalysis(model, X, Ytrue)
+  stats1.onePassAnalysis(model, X, Ytrue)
+  # stats2.multPassAnalysis(model, X, Ytrue)
   
-print(stats.accuracy())
-print(stats.MacroF1(), stats.WeightedF1())
+# print(stats1.accuracy(), stats2.accuracy())
+# print(stats1.MacroF1(), stats2.MacroF1())
+# print(stats1.WeightedF1(), stats2.WeightedF1())
+print(stats1.accuracy)
+print(stats1.MacroF1)
+print(stats1.WeightedF1)

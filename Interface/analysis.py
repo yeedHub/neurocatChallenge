@@ -1,6 +1,6 @@
 from abc import ABCMeta, abstractmethod
   
-class ModelStatisticsInterface(metaclass=ABCMeta):
+class ModelAnalyzerInterface(metaclass=ABCMeta):
   """
   The ModelStatisticsInterface calculates different metrics for a given model.
   """
