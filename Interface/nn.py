@@ -6,7 +6,7 @@ class NNModelInterface(metaclass=ABCMeta):
   frameworks.
   """
   @abstractmethod
-  def __init__(self, model):
+  def __init__(self, model, optimizer, loss):
     """
     The constructor takes a reference to the model.
     The exact form of these references depend on the used framework.
@@ -20,3 +20,33 @@ class NNModelInterface(metaclass=ABCMeta):
     single data point (or batch).
     """
     pass
+  
+  @abstractmethod
+  def interpret_output(self, output):
+    """
+    Interpret the output of self.forward(x). This can be useful e.g. when we build a
+    multi-class classifier and our models output needs to be normalized to probabilities.
+    """
+    pass
+  
+  @abstractmethod
+  def backward(self, ypred):
+    """
+    Backward step of the neural network model.
+    """
+    pass
+  
+  @abstractmethod
+  def zero_grad(self):
+    """
+    Set all gradients to  zero.
+    """
+    pass
+  
+  @abstractmethod
+  def gradient_for(self, x):
+    """
+    Returns the gradient for x. x is assumed to be a single input (sample or batch).
+    """
+    pass
+  
