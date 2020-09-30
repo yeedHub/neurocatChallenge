@@ -110,7 +110,7 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
     self.MacroF1    = 0
     self.WeightedF1 = 0
   
-  def functionality_analysis(self, model, X, Ytrue):
+  def functionality_analysis(self, model, X, Ytrue, params=None):
     for i, x in enumerate(X):
       interpreted_output = model.interpret_output(model.forward(x))
       
@@ -149,15 +149,19 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
     self.F1     = 2 * ( self.precision * self.recall ) / denominator if denominator != 0 else 1
     
     self.WeightedF1   = np.sum(self.F1 * self.total_class_samples) / self.total_samples
-    self.bal_accuracy = np.sum(self.recall + self.specificity) / 2.0 # balanced accuracy
+    self.bal_accuracy = np.sum(self.recall + self.specificity) / 2.0
     self.accuracy     = (np.sum(self.TrueP) + np.sum(self.TrueN)) / (np.sum(self.TrueP) + np.sum(self.TrueN) + np.sum(self.FalseP) + np.sum(self.FalseN))
   
-  def robustness_analysis(self, model, X, Ytrue):
+  def robustness_analysis(self, model, X, Ytrue, params=None):
     result = []
     for i, x in enumerate(X):
       
       gradient  = model.gradient_for(x, Ytrue[i])
-      perturbed = self.fgsm_attack(0.07, x, gradient)
+      perturbed = None
+      if params != None and "fsgm_eps" in params:
+        perturbed = self.fgsm_attack(params["fsgm_eps"], x, gradient)
+      else:
+        perturbed = self.fgsm_attack(0.007, x, gradient)        
       
       # If the prediction of original data is wrong, don't include them
       # (otherwise we run the risk of skewing our attack result)

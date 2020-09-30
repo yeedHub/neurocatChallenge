@@ -9,14 +9,14 @@ class ModelAnalyzerInterface(metaclass=ABCMeta):
     pass
   
   @abstractmethod
-  def functionality_analysis(self, model, X):
+  def functionality_analysis(self, model, X, params):
     """
     Calculate all functionality related metrics.
     """
     pass
   
   @abstractmethod
-  def robustness_analysis(self, model, X):
+  def robustness_analysis(self, model, X, params):
     """
     Calculate all robustness related metrics.
     """
