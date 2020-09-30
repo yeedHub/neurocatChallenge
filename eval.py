@@ -5,7 +5,7 @@ import torch
 import torchvision.transforms as transforms
 import torchvision.datasets   as datasets
 
-from PyTorchModel import PyTorchNNMulticlassifier, PyTorchNNClassifierAnalyzer, PyTorchClassifierDataHandler
+from modelimpl.pytorchmodel import PyTorchNNMulticlassifier, PyTorchNNClassifierAnalyzer, PyTorchClassifierDataHandler
 
 import external.resnet as resnet
 
@@ -14,7 +14,7 @@ preprocess = transforms.Compose([
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225]), # taken from the resnet code
 ])
 
-cifar10 = datasets.CIFAR10("./data/CIFAR10/", train=False, transform=preprocess, download=False)
+cifar10 = datasets.CIFAR10("./data/CIFAR10/", train=False, transform=preprocess, download=True)
 cifar10_classes = ["airplane",
                    "automobile",
                    "bird",

@@ -1,9 +1,9 @@
-from Interface.analysis import ModelAnalyzerInterface
-from Interface.nn       import NNModelInterface
-from Interface.data     import DataHandlerInterface
+from modelinterface.analysis import ModelAnalyzerInterface
+from modelinterface.nn       import NNModelInterface
+from modelinterface.data     import DataHandlerInterface
 
 import torch
-import torchvision.utils as utils
+# import torchvision.utils as utils
 import numpy             as np
 import matplotlib.pyplot as plt
 
