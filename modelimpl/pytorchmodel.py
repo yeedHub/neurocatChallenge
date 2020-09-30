@@ -114,13 +114,17 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
     for i, x in enumerate(X):
       interpreted_output = model.interpret_output(model.forward(x))
       
-      self.total_samples += len(interpreted_output[0])
-      for s in Ytrue[i]:
-        self.total_class_samples[s] += 1
+      self.count_samples(interpreted_output[0], Ytrue[i])
       
       self.calculate_confusion_matrix(interpreted_output[0], Ytrue[i])
     
     self.calculate_cnf_derivations()
+    
+  def count_samples(self, x, ytrue):
+    unique, counts = np.unique(ytrue, return_counts=True)
+    
+    self.total_class_samples[unique] += counts
+    self.total_samples += len(x)
   
   def calculate_confusion_matrix(self, output, ytrue):
     # self.cnf_matrix += confusion_matrix(ytrue, output, labels=range(self.num_class))
