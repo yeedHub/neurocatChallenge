@@ -27,7 +27,7 @@ cifar10_classes = ["airplane",
                    "truck"]
 
 # Load the pre-trained checkpoint for the ResNet44 model (trained on CIFAR10)
-checkpoint = torch.load("./external/pretrained_models/resnet44-014dd654.th", map_location=torch.device('cpu'))
+checkpoint = resnet.checkpoint
 
 # The model was saved wrapped in torch.nn.DataParallel, therefore we have to strip the "module." prefix
 new_state_dict = OrderedDict()

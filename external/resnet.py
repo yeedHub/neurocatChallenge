@@ -36,6 +36,13 @@ from torch.autograd import Variable
 
 __all__ = ['ResNet', 'resnet20', 'resnet32', 'resnet44', 'resnet56', 'resnet110', 'resnet1202']
 
+# THIS IS A CHANGE BY ME:
+# I keep a reference to the resnet checkpoint here so that it can be accessed
+# conveniently when supplied with the distribution package
+from pathlib import Path
+path = Path(__file__).parent.resolve() / "./pretrained_models/resnet44-014dd654.th"
+checkpoint = torch.load(path, map_location=torch.device('cpu'))
+
 def _weights_init(m):
     classname = m.__class__.__name__
     #print(classname)
