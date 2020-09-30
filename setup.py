@@ -13,7 +13,8 @@ setuptools.setup(
         'torchvision',
         'numpy',
         'matplotlib',
-        'tqdm'
+        'tqdm',
+        'jupyter'
     ],
     python_requires='>=3.6',
 )
