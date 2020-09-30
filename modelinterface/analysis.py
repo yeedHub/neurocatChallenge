@@ -9,6 +9,13 @@ class ModelAnalyzerInterface(metaclass=ABCMeta):
     pass
   
   @abstractmethod
+  def reset(self):
+    """
+    Resets the calculated/collected metrics.
+    """
+    pass
+  
+  @abstractmethod
   def functionality_analysis(self, model, X, params):
     """
     Calculate all functionality related metrics.

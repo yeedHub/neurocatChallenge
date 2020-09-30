@@ -40,6 +40,9 @@ class PyTorchClassifierDataHandler(DataHandlerInterface):
   
   def datasetLength(self):
     return self.__dataset.__len__()
+  
+  def get_charlabels(self):
+    return self.__charlabels
 
 class PyTorchNNMulticlassifier(NNModelInterface):
   def __init__(self, model, optimizer, loss_function):
@@ -95,20 +98,22 @@ class PyTorchNNMulticlassifier(NNModelInterface):
 
 class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):  
   def __init__(self, num_class):
-    self.num_class = num_class                     # number of different classes
+    self.num_class = num_class # number of different classes
+    self.reset()
+  
+  def reset(self):
+    self.total_samples       = 0                        # number of all samples seen so far
+    self.total_class_samples = np.zeros(self.num_class) # number of each class in data seen so far
     
-    self.total_samples       = 0                   # number of all samples
-    self.total_class_samples = np.zeros(num_class) # number of each class in data 
-    
-    self.cnf_matrix = np.zeros((num_class, num_class))
-    self.TrueP      = np.zeros(num_class)
-    self.TrueN      = np.zeros(num_class)
-    self.FalseP     = np.zeros(num_class)
-    self.FalseN     = np.zeros(num_class)
+    self.cnf_matrix = np.zeros((self.num_class, self.num_class))
+    self.TrueP      = np.zeros(self.num_class)
+    self.TrueN      = np.zeros(self.num_class)
+    self.FalseP     = np.zeros(self.num_class)
+    self.FalseN     = np.zeros(self.num_class)
     
     self.accuracy   = 0
     self.MacroF1    = 0
-    self.WeightedF1 = 0
+    self.weightedF1 = 0  
   
   def functionality_analysis(self, model, X, Ytrue, params=None):
     for i, x in enumerate(X):
@@ -152,7 +157,7 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
     denominator = self.precision + self.recall
     self.F1     = 2 * ( self.precision * self.recall ) / denominator if denominator != 0 else 1
     
-    self.WeightedF1   = np.sum(self.F1 * self.total_class_samples) / self.total_samples
+    self.weightedF1   = np.sum(self.F1 * self.total_class_samples) / self.total_samples
     self.bal_accuracy = np.sum(self.recall + self.specificity) / 2.0
     self.accuracy     = (np.sum(self.TrueP) + np.sum(self.TrueN)) / (np.sum(self.TrueP) + np.sum(self.TrueN) + np.sum(self.FalseP) + np.sum(self.FalseN))
   
@@ -162,8 +167,8 @@ class PyTorchNNClassifierAnalyzer(ModelAnalyzerInterface):
       
       gradient  = model.gradient_for(x, Ytrue[i])
       perturbed = None
-      if params != None and "fsgm_eps" in params:
-        perturbed = self.fgsm_attack(params["fsgm_eps"], x, gradient)
+      if params != None and "fgsm_eps" in params:
+        perturbed = self.fgsm_attack(params["fgsm_eps"], x, gradient)
       else:
         perturbed = self.fgsm_attack(0.007, x, gradient)        
       

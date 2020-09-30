@@ -63,7 +63,7 @@ stats2 = PyTorchNNClassifierAnalyzer(len(cifar10_classes))
 for _ in tqdm(range(2)):
   X, Ytrue = data.getNextData(1)
   stats1.functionality_analysis(model, X, Ytrue)
-  stats2.robustness_analysis(model, X, Ytrue, params={"fsgm_eps": 0.07})
+  stats2.robustness_analysis(model, X, Ytrue, params={"fgsm_eps": 0.07})
 import numpy as np
 print(str((np.sum(stats1.TrueP), np.sum(stats1.FalseP), np.sum(stats1.TrueN), np.sum(stats1.FalseN))))
 print(str((np.sum(stats2.TrueP), np.sum(stats2.FalseP), np.sum(stats2.TrueN), np.sum(stats2.FalseN))))
