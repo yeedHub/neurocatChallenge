@@ -2,6 +2,10 @@ from abc import ABCMeta, abstractmethod
 
 
 class AttackInterface(metaclass=ABCMeta):
+    """
+    The AttachInterface implements an adversarial attack.
+    """
+
     @abstractmethod
     def __call__(self):
         """
