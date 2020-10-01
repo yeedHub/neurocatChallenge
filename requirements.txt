@@ -1,0 +1,5 @@
+numpy~=1.19.2
+torch~=1.6.0
+matplotlib~=3.3.2
+torchvision~=0.7.0
+setuptools~=47.1.0

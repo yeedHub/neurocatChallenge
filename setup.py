@@ -8,13 +8,13 @@ setuptools.setup(
     description="Solution for the neurocat challenge.",
     packages=setuptools.find_packages(),
     include_package_data=True,
-    install_requires=[
-        'torch',
-        'torchvision',
-        'numpy',
-        'matplotlib',
-        'tqdm',
-        'jupyter'
-    ],
+    # install_requires=[
+    #     'torch>=1.6.0',
+    #     'torchvision>=0.7.0',
+    #     'numpy',
+    #     'matplotlib',
+    #     'tqdm',
+    #     'jupyter'
+    # ],
     python_requires='>=3.6',
 )
