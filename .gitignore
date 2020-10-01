@@ -12,8 +12,9 @@ __pycache__/
 #data folder
 /data/
 
-#VS Code
+# IDE
 .vscode
+.idea
 
 # Distribution / packaging
 .Python
