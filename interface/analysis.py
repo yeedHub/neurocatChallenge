@@ -8,6 +8,11 @@ class ModelAnalysisInterface(metaclass=ABCMeta):
 
     @abstractmethod
     def __init__(self):
+        """
+
+        Returns: None
+
+        """
         pass
 
     @abstractmethod
@@ -21,14 +26,15 @@ class ModelAnalysisInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __call__(self, model, input):
+    def __call__(self, model, model_input):
         """
+        Do the analysis.
 
         Args:
-            model: Instance of interface.ModelInterface
-            input: List of input to the model.
+            model: reference to the model
+            model_input: input to the model
 
-        Returns: Dictionary with the calculated metrics.
+        Returns: None
 
         """
         pass

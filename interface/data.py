@@ -3,24 +3,35 @@ from abc import ABCMeta, abstractmethod
 
 class DataHandlerInterface(metaclass=ABCMeta):
     """
-    The DataHandlerInterface generalizes the data handling of different
-    frameworks.
+    The DataHandlerInterface generalizes the data handling of different frameworks
+    or other means of loading data.
     """
 
     @abstractmethod
     def __init__(self, dataset, params):
+        """
+
+        Args:
+            dataset: the dataset
+            params: parameters for loading data
+
+        Returns: None
+
+        """
+        self.__dataset = dataset
+        self.__params = params
         pass
 
     @abstractmethod
     def get_next(self, count):
         """
-        Depending on how the frameworks data pipeline is configured this
+        Depending on how the (frameworks) data pipeline is configured this
         function returns count number of samples/batches.
 
         Args:
-            count: How many samples/batches are requested.
+            count: number of requested samples/batches
 
-        Returns: count number of samples/batches.
+        Returns: requested samples/batches
 
         """
         pass
@@ -29,7 +40,7 @@ class DataHandlerInterface(metaclass=ABCMeta):
     def size(self):
         """
 
-        Returns: The number of samples in the dataset.
+        Returns: the number of data points in the dataset
 
         """
         pass

@@ -3,15 +3,30 @@ from abc import ABCMeta, abstractmethod
 
 class AttackInterface(metaclass=ABCMeta):
     """
-    The AttachInterface implements an adversarial attack.
+    The AttackInterface implements an adversarial attack.
     """
 
     @abstractmethod
-    def __call__(self):
+    def __init__(self, params):
+        """
+
+        Args:
+            params: parameters of the attack
+
+        Returns: None
+
+        """
+        self.__params = params
+
+    @abstractmethod
+    def __call__(self, attack_input):
         """
         Execute the attack.
 
-        Returns: optionally returns the result of the attack.
+        Args:
+            attack_input: input needed to execute the attack
+
+        Returns: None
 
         """
         pass
@@ -20,8 +35,11 @@ class AttackInterface(metaclass=ABCMeta):
     def set_params(self, params):
         """
         Set the parameters of the attack.
+
         Args:
-            params: New parameters.
+            params: new parameters
+
+        Returns: None
 
         """
         pass

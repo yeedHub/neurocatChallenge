@@ -1,12 +1,21 @@
 from collections import OrderedDict
+from typing import Iterator
+
+from torch.nn import Module, Parameter
 
 
-class PytorchModel():
+class PytorchModel:
     """
     The PytorchModel class is responsible for initializing a pretrained pytorch model correctly.
     """
 
-    def __init__(self, model, params):
+    def __init__(self, model: Module, params: dict) -> None:
+        """
+
+        Args:
+            model: pytorch neural network module
+            params: parameters for initializing the neural network correctly
+        """
         self.__model = model
 
         # Load the pre-trained checkpoint
@@ -20,13 +29,18 @@ class PytorchModel():
 
         self.__model.load_state_dict(new_state_dict)
 
-    def model(self):
-        return self.__model
-
-    def get_parameters(self):
+    def model(self) -> Module:
         """
 
-        Returns: The model parameters that are trained.
+        Returns: the initialized model
+
+        """
+        return self.__model
+
+    def get_parameters(self) -> Iterator[Parameter]:
+        """
+
+        Returns: the model parameters that are trained (weights)
 
         """
         return self.__model.parameters()
