@@ -104,9 +104,9 @@ class RobustnessAnalysis(ModelAnalysisInterface):
             gradient = model.gradient_for(x, Ytrue[i])
             perturbed = None
             if params != None and "fgsm_eps" in params:
-                perturbed = FGSMAttack(params["fgsm_eps"], x, gradient)
+                perturbed = attack(params["fgsm_eps"], x, gradient)
             else:
-                perturbed = FGSMAttack(0.007, x, gradient)
+                perturbed = attack(0.007, x, gradient)
 
             # If the prediction of original data is wrong, don't include them
             # (otherwise we run the risk of skewing our attack result)
