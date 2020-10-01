@@ -11,3 +11,13 @@ class AttackInterface(metaclass=ABCMeta):
 
         """
         pass
+
+    @abstractmethod
+    def set_params(self, params):
+        """
+        Set the parameters of the attack.
+        Args:
+            params: New parameters.
+
+        """
+        pass

@@ -1,6 +1,5 @@
 import numpy as np
 
-from impl.fgsm_attack import FGSMAttack
 from interface.analysis import ModelAnalysisInterface
 
 
@@ -89,24 +88,20 @@ class FunctionalityAnalysis(ModelAnalysisInterface):
 
 
 class RobustnessAnalysis(ModelAnalysisInterface):
-    def __init__(self, num_class):
+    def __init__(self, attack, num_class):
+        self.__attack = attack
         self.__func_analysis = FunctionalityAnalysis(num_class)
 
     def reset(self):
         self.__func_analysis.reset()
 
-    def __call__(self, model, input, params=None):
+    def __call__(self, model, input):
         X = input[0]
         Ytrue = input[1]
         result = []
-        attack = FGSMAttack()
         for i, x in enumerate(X):
             gradient = model.gradient_for(x, Ytrue[i])
-            perturbed = None
-            if params != None and "fgsm_eps" in params:
-                perturbed = attack(params["fgsm_eps"], x, gradient)
-            else:
-                perturbed = attack(0.007, x, gradient)
+            perturbed = self.__attack(x, gradient)
 
             # If the prediction of original data is wrong, don't include them
             # (otherwise we run the risk of skewing our attack result)
@@ -117,3 +112,6 @@ class RobustnessAnalysis(ModelAnalysisInterface):
             result.append(perturbed)
 
         return self.__func_analysis(model, [result, Ytrue])
+
+    def set_attack_params(self, params):
+        self.__attack.set_params(params)

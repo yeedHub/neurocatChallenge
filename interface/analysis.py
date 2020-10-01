@@ -21,12 +21,12 @@ class ModelAnalysisInterface(metaclass=ABCMeta):
         pass
 
     @abstractmethod
-    def __call__(self, model, input, params=None):
+    def __call__(self, model, input):
         """
 
         Args:
             model: Instance of interface.ModelInterface
-            X: List of inputs (samples or batches) to model.
+            input: List of input to the model.
 
         Returns: Dictionary with the calculated metrics.
 

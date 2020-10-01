@@ -8,6 +8,7 @@ from tqdm import tqdm
 import external.resnet as resnet
 from impl.analysis import FunctionalityAnalysis, RobustnessAnalysis
 from impl.data import PyTorchClassifierDataHandler
+from impl.fgsm_attack import FGSMAttack
 from impl.pytorchnn import PyTorchNNMulticlassifier
 
 preprocess = transforms.Compose([
@@ -58,14 +59,14 @@ model = PyTorchNNMulticlassifier(resnet44model, optimizer, loss_function)
 data = PyTorchClassifierDataHandler([cifar10, cifar10_classes], loaderparams)
 
 functionality_analysis = FunctionalityAnalysis(len(cifar10_classes))
-robustness_analysis = RobustnessAnalysis(len(cifar10_classes))
+robustness_analysis = RobustnessAnalysis(FGSMAttack({"eps": 0.07}), len(cifar10_classes))
 
 functionality_results = None
 robustness_results = None
 for _ in tqdm(range(2)):
     X, Ytrue = data.get_next(1)
     functionality_results = functionality_analysis(model, [X, Ytrue])
-    robustness_results = robustness_analysis(model, [X, Ytrue], params={"fgsm_eps": 0.07})
+    robustness_results = robustness_analysis(model, [X, Ytrue])
 
 print("Accuracy:          " + str(round(functionality_results["accuracy"], 3)) + " -- " + str(
     round(robustness_results["accuracy"], 3)))
