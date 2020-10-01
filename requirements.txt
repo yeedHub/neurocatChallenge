@@ -3,3 +3,4 @@ torch~=1.6.0
 matplotlib~=3.3.2
 torchvision~=0.7.0
 setuptools~=47.1.0
+jupyter~=1.0.0
