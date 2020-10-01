@@ -1,5 +1,5 @@
 import matplotlib.pyplot as plt
-import numpy             as np
+import numpy as np
 import torch
 
 from interface.nn import NNModelInterface
@@ -10,9 +10,6 @@ class PyTorchNNMulticlassifier(NNModelInterface):
         self.__model = model
         self.__optimizer = optimizer
         self.__loss_function = loss_function
-
-    def model(self):
-        return self.__model
 
     def forward(self, x):
         """

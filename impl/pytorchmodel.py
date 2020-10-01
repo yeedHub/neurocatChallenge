@@ -1,8 +1,11 @@
-from interface.model import ModelInterface
-
 from collections import OrderedDict
 
-class PytorchModel(ModelInterface):
+
+class PytorchModel():
+    """
+    The PytorchModel class is responsible for initializing a pretrained pytorch model correctly.
+    """
+
     def __init__(self, model, params):
         self.__model = model
 
@@ -23,7 +26,7 @@ class PytorchModel(ModelInterface):
     def get_parameters(self):
         """
 
-        Returns: The model parameters, that are trained.
+        Returns: The model parameters that are trained.
 
         """
         return self.__model.parameters()
