@@ -11,6 +11,9 @@ class PyTorchNNMulticlassifier(NNModelInterface):
         self.__optimizer = optimizer
         self.__loss_function = loss_function
 
+    def model(self):
+        return self.__model
+
     def forward(self, x):
         """
         x has to be 4 dimensional: batch X RGB X H x W
