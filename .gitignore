@@ -12,6 +12,8 @@ __pycache__/
 # IDE
 .idea
 
+# virtual environment
+/venv/
 /env/
 
 .ipynb*
