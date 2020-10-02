@@ -7,26 +7,39 @@ Adapt the method below that is supposed to take an image and optimizes this imag
 neighborhood of the image converges to the mean color of its respective neighborhood.
 Only adapt the objective. Generate a docstring. Test your method.
 """
-import matplotlib.pyplot as plt
 import numpy as np
 import tensorflow as tf
-from matplotlib import image
+
 from tqdm import tqdm
 
 
-def kernel_idx(img, row, column, w, h):
-    img_w = img.shape[0]
-    img_h = img.shape[1]
-    range_w = (int((w - 1) / 2), int((w - 1) / 2) + 1)
-    if (w - 1) % 2 != 0:
+def kernel_index(img_shape: tuple, row_index: int, column_index: int, kernel_width: int, kernel_height: int) -> tuple:
+    """
+    Calculates all indices for a kernel with kernel center (row_index, column_index),
+    kernel_width width and kernel_height height.
+
+    Args:
+        img_shape: shape of the input image
+        row_index: row index of the kernel center
+        column_index: column index of the kernel center
+        kernel_width: width of the kernel
+        kernel_height: height of the kernel
+
+    Returns: tuple in the form of (row_indices, column_indices) that make up the kernel
+
+    """
+    img_w = img_shape[0]
+    img_h = img_shape[1]
+    range_w = (int((kernel_width - 1) / 2), int((kernel_width - 1) / 2) + 1)
+    if (kernel_width - 1) % 2 != 0:
         range_w = (range_w[0] + 1, range_w[1])
 
-    range_h = (int((h - 1) / 2), int((h - 1) / 2) + 1)
-    if (h - 1) % 2 != 0:
+    range_h = (int((kernel_height - 1) / 2), int((kernel_height - 1) / 2) + 1)
+    if (kernel_height - 1) % 2 != 0:
         range_h = (range_h[0] + 1, range_h[1])
 
-    row_idx = np.array(range(row - range_w[0], row + range_w[1]))
-    column_idx = np.array(range(column - range_h[0], column + range_h[1]))
+    row_indices = np.arange(row_index - range_w[0], row_index + range_w[1])
+    column_indices = np.arange(column_index - range_h[0], column_index + range_h[1])
 
     # For those kernels that go over the edge we use a standard image processing
     # technique, where you "mirror" the image and "place" it next to the edge.
@@ -35,33 +48,112 @@ def kernel_idx(img, row, column, w, h):
     #   [1, 2, 3, 4],
     #   [1, 2, 3, 4],
     # ]
-    # and we want to extract the kernel at index (1,3) with kernel_width = 4, kernel_height = 3 we and up with:
+    # and we want to extract the kernel at index (1,3) with kernel_width = 4, kernel_height = 3 we end up with:
     # [ [3, 4, 4, 3]
     #   [3, 4, 4, 3],
     #   [3, 4, 4, 3],
     # ]
-    row_min_mask = row_idx < 0
-    column_min_mask = column_idx < 0
-    row_max_mask = row_idx >= img_w
-    column_max_mask = column_idx >= img_h
+    row_min_mask = row_indices < 0
+    column_min_mask = column_indices < 0
+    row_max_mask = row_indices >= img_w
+    column_max_mask = column_indices >= img_h
 
-    row_idx[row_min_mask] = 0 - row_idx[row_min_mask]
-    row_idx[row_max_mask] = img_w - (row_idx[row_max_mask] - img_w + 1)
+    row_indices[row_min_mask] = 0 - row_indices[row_min_mask]
+    row_indices[row_max_mask] = img_w - (row_indices[row_max_mask] - img_w + 1)
 
-    column_idx[column_min_mask] = 0 - column_idx[column_min_mask]
-    column_idx[column_max_mask] = img_h - (column_idx[column_max_mask] - img_h + 1)
+    column_indices[column_min_mask] = 0 - column_indices[column_min_mask]
+    column_indices[column_max_mask] = img_h - (column_indices[column_max_mask] - img_h + 1)
 
     # Now we need all combinations of row_idx and column_idx
-    mesh = np.array(np.meshgrid(row_idx, column_idx))
-    combinations = mesh.T.reshape(-1, 2)
+    combinations = np.array(np.meshgrid(row_indices, column_indices)).T.reshape(-1, 2)
 
     return combinations[:, 0], combinations[:, 1]
+
+
+def compute_kernel_centers(img_shape: tuple, row_stride: int, column_stride: int) -> np.ndarray:
+    """
+    Computes all the kernel center indices with the given strides.
+
+    Args:
+        img_shape: shape of the input image
+        row_stride: stride of the rows
+        column_stride: stride of the columns
+
+    Returns: kernel center indices
+
+    """
+    kernel_centers_row = np.arange(0, img_shape[0], row_stride)
+    kernel_centers_clm = np.arange(0, img_shape[1], column_stride)
+
+    return np.array(np.meshgrid(kernel_centers_row, kernel_centers_clm)).T.reshape(-1, 2)
+
+
+def compute_kernels(input_image: np.ndarray, kernel_centers: np.ndarray, kernel_width: int,
+                    kernel_height: int) -> tuple:
+    """
+    Computes the kernels for the given kernel_centers, with given kernel_width and kernel_height.
+
+    Args:
+        input_image: the input image
+        kernel_centers: the kernel center indices
+        kernel_width: the kernel width
+        kernel_height: the kernel height
+
+    Returns: a tuple in the form of (kernels, indices), where indices are the indices of the kernel in the input image
+
+    """
+    indices = []
+    kernels = []
+    for row, column in kernel_centers:
+        index = kernel_index(input_image.shape, row, column, kernel_width, kernel_height)
+
+        indices.append(index)
+        kernels.append(input_image[index[0], index[1], :])
+
+    return np.array(kernels), np.array(indices)
+
+
+def compute_mean_kernel_image(img_shape: tuple, kernels: np.ndarray, indices: np.ndarray) -> np.ndarray:
+    """
+    Constructs an image of all the kernels, where each of the kernels elements is the mean of the kernel.
+
+    Args:
+        img_shape: shape of the input image
+        kernels: array of kernels
+        indices: array of indices
+
+    Returns: the constructed image
+
+    """
+    mean_kernel_numpy = tf.Session().run(tf.reduce_mean(kernels,
+                                                        axis=1,
+                                                        keepdims=True))
+    mean_kernel_img = np.zeros(img_shape)
+
+    for i, (row, column) in enumerate(indices):
+        mean_kernel_img[row, column, :] = mean_kernel_numpy[i]
+
+    return np.array([mean_kernel_img])
+
 
 def image_smoother(input_image: np.ndarray,
                    kernel_height=5,
                    kernel_width=5,
                    stride_height=1,
                    stride_width=1) -> np.ndarray:
+    """
+    Takes an image and smoothes it.
+
+    Args:
+        input_image: the input image
+        kernel_height: the kernel height
+        kernel_width: the kernel width
+        stride_height: the kernel stride for columns
+        stride_width: the kernel stride for rows
+
+    Returns: the smoothed image
+
+    """
     assert input_image.ndim == 4
     assert input_image.shape[0] == 1 and input_image.shape[-1] == 3
 
@@ -72,23 +164,14 @@ def image_smoother(input_image: np.ndarray,
 
     # This objective is the only part you need to change.
     # try to use as less for-loops as possible
+
     # Note: because of the assertion on line 52 I assume that the function
     #       works on single images.
-    kernel_center_row = list(range(0, img[0].shape[0], stride_width))
-    kernel_center_column = list(range(0, img[0].shape[1], stride_height))
-    kernel_center = np.array(np.meshgrid(kernel_center_row, kernel_center_column)).T.reshape(-1, 2)
+    kernel_centers = compute_kernel_centers(input_image[0].shape, stride_width, stride_height)
+    kernels, indices = compute_kernels(input_image[0], kernel_centers, kernel_width, kernel_height)
+    mean_kernel_img = compute_mean_kernel_image(input_image[0].shape, kernels, indices)
 
-    indexes = np.array([kernel_idx(img[0], row, column, kernel_width, kernel_height) for row, column in kernel_center])
-    kernels = np.array([input_image[0][row, column, :] for row, column in indexes])
-    mean_kernel_numpy = tf.Session().run(tf.reduce_mean(kernels,
-                                       axis=(1),
-                                       keepdims=True))
-
-    mean_kernel = np.zeros(input_image.shape)
-    for i, (row, column) in enumerate(indexes):
-        mean_kernel[0][row, column, :] = mean_kernel_numpy[i]
-
-    objective = tf.square(input_node - mean_kernel)
+    objective = tf.square(input_node - mean_kernel_img)
     # Please note that this objective would only be correct if
     # (kernel_height, kernel_width) == input_image.shape[1:3]
     # your approach must be flexible under kernel size and stride
@@ -109,39 +192,3 @@ def image_smoother(input_image: np.ndarray,
             input_image = np.clip(input_image - gradient_step, np.min(input_image), np.max(input_image))
 
     return input_image
-
-img = image.imread("img.jpg")
-img = img[400:600, 400:600, :]
-img = np.array([img / 255.0], dtype="float32")
-plt.subplot(121)
-plt.imshow(img[0])
-
-new_img = image_smoother(img, 10, 10, 3, 3)
-plt.subplot(122)
-plt.imshow(new_img[0])
-
-plt.show()
-#
-# ar = np.array([
-#     [1, 2, 3],
-#     [4, 5, 6],
-#     [7, 8, 9],
-# ])
-#
-# idx = [
-#     (0, 1),
-#     (2,  2)
-# ]
-#
-# row_idx = [0, 2]
-# clm_idx = [1, 2]
-#
-# mesh = np.array(np.meshgrid(row_idx, clm_idx)).T.reshape(-1, 2)
-# print(mesh)
-#
-# print(ar)
-# print("---------")
-# # print(ar[idx])
-# # print(ar[row_idx, clm_idx])
-# ar[mesh[:, 0], mesh[:, 1]] = 0
-# print(ar)
