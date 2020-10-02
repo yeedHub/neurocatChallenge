@@ -5,7 +5,6 @@ import numpy as np
 from puzzle import image_smoother
 
 img = image.imread("img.jpg")
-img = img[400:600, 400:600, :]
 img = np.array([img / 255.0], dtype="float32")
 plt.subplot(121)
 plt.imshow(img[0])
