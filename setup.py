@@ -11,7 +11,7 @@ setuptools.setup(
     install_requires=[
         'torch~=1.6.0',
         'torchvision~=0.7.0',
-        'numpy~=1.19.2',
+        'numpy>=1.19.0',
         'matplotlib~=3.2.1',
         'tqdm~=4.48.0',
         'tensorflow~=1.15',
