@@ -1,8 +1,8 @@
 import matplotlib.pyplot as plt
-from matplotlib import image
 import numpy as np
+from matplotlib import image
 
-from puzzle import image_smoother
+from puzzle.puzzle import image_smoother
 
 img = image.imread("img.jpg")
 img = np.array([img / 255.0], dtype="float32")
